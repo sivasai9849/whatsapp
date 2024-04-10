@@ -7,7 +7,9 @@ app = FastAPI()
 
 whatsapp_cloud_api_access_token=os.environ.get("WHATSAPP_ACCESS_TOKEN")
 sender_phone_number_id=os.environ.get("WHATSAPP_PHONE_NUMBER_ID")
-
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
 @app.post("/webhook")
 async def webhook(request: Request):
     data = await request.json()
