@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException, HttpResponse
+from fastapi import FastAPI, Request, HTTPException, Response
 import os
 import requests
 
@@ -21,9 +21,12 @@ async def webhook(request: Request):
     return {"status": "success"}
 
 @app.get("/webhook")
-async def verify_webhook(request: Request, mode: str, token: str, challenge: str):
+async def verify_webhook(request: Request):
+    mode = request.query_params.get('hub.mode')
+    token = request.query_params.get('hub.verify_token')
+    challenge = request.query_params.get('hub.challenge')
     if mode == 'subscribe' and token == WEBHOOK_VERIFY_TOKEN:
-        return HttpResponse(content=challenge)
+        return Response(content=challenge)
     else:
         raise HTTPException(status_code=403, detail="Forbidden")
 
