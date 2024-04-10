@@ -22,6 +22,8 @@ async def webhook(request: Request):
 
 @app.get("/webhook")
 async def verify_webhook(mode: str, token: str, challenge: str):
+    print(f"mode: {mode}, token: {token}, challenge: {challenge}")
+    
     if mode == 'subscribe' and token == WEBHOOK_VERIFY_TOKEN:
         return {"challenge": challenge}
     else:
