@@ -21,9 +21,10 @@ async def webhook(request: Request):
     return {"status": "success"}
 
 @app.get("/webhook")
-async def verify_webhook(mode: str, token: str, challenge: str):
-    print(f"mode: {mode}, token: {token}, challenge: {challenge}")
-    
+async def verify_webhook(request: Request):
+    mode = request.query_params.get('hub.mode')
+    token = request.query_params.get('hub.verify_token')
+    challenge = request.query_params.get('hub.challenge')
     if mode == 'subscribe' and token == WEBHOOK_VERIFY_TOKEN:
         return {"challenge": challenge}
     else:
