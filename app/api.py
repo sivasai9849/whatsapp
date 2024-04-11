@@ -51,53 +51,34 @@ def send_button_message(business_phone_number_id, message):
     data = {
         "messaging_product": "whatsapp",
         "to": message['from'],
-        "template": {
-            "name": "template_name",  # Replace with your template name
-            "language": {
-                "policy": "deterministic",
-                "code": "en_US"
+        "type": "interactive",
+        "interactive": {
+            "type": "button",
+            "header": {
+                "type": "text",
+                "text": "Which documents you need to process?"
             },
-            "components": [
-                {
-                    "type": "body",
-                    "parameters": [
-                        {
-                            "type": "text",
-                            "text": "Which documents you need to process?"
+            "body": {
+                "text": "Please select an option:"
+            },
+            "action": {
+                "buttons": [
+                    {
+                        "type": "reply",
+                        "reply": {
+                            "id": "INVOICE",
+                            "title": "Invoice"
                         }
-                    ]
-                },
-                {
-                    "type": "button",
-                    "sub_type": "quick_reply",
-                    "index": "1",
-                    "parameters": [
-                        {
-                            "type": "payload",
-                            "payload": "INVOICE"
-                        },
-                        {
-                            "type": "text",
-                            "text": "Invoice"
+                    },
+                    {
+                        "type": "reply",
+                        "reply": {
+                            "id": "RECEIPT",
+                            "title": "Receipt"
                         }
-                    ]
-                },
-                {
-                    "type": "button",
-                    "sub_type": "quick_reply",
-                    "index": "2",
-                    "parameters": [
-                        {
-                            "type": "payload",
-                            "payload": "RECEIPT"
-                        },
-                        {
-                            "type": "text",
-                            "text": "Receipt"
-                        }
-                    ]
-                }
-            ]
+                    }
+                ]
+            }
         }
     }
     response = requests.post(url, headers=headers, json=data)
