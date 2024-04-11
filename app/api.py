@@ -25,7 +25,9 @@ async def webhook(request: Request):
             send_message(business_phone_number_id, message, "I didn't understand that. Please try again or send 'stop' to end the conversation or Message 'Hi' to start again.")
 
     elif message.get('type') == 'image':
-        handle_image_message(business_phone_number_id, message)
+        send_message(business_phone_number_id, message, "I received your image. Let me process it.")
+    elif message.get('type') == 'document':
+        send_message(business_phone_number_id, message, "I received your document. Let me process it.")
     elif 'interactive' in message:
         payload = message['interactive']['button_reply']['id']
         if payload == 'INVOICE':
@@ -34,14 +36,6 @@ async def webhook(request: Request):
             send_message(business_phone_number_id, message, "Please upload your receipt.File should be in JPG, PNG, PDF.")    
     return {"status": "success"}
 
-def has_greeted(message):
-    # Implement logic to check if the user has greeted the bot before
-    # This could involve checking a database or keeping track of the conversation state
-    return True  # For now, we assume the user hasn't greeted the bot
-
-def handle_image_message(business_phone_number_id, message):
-    # Implement image handling logic here
-    pass
 def send_message(business_phone_number_id, message, text):
     url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
     headers = {"Authorization": f"Bearer {GRAPH_API_TOKEN}"}
