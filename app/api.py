@@ -12,13 +12,81 @@ async def webhook(request: Request):
     data = await request.json()
 
     message = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0]
+    business_phone_number_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('metadata', {}).get('phone_number_id')
 
     if message.get('type') == 'text':
-        business_phone_number_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('metadata', {}).get('phone_number_id')
+        text = message['text']['body'].lower()
+        if text in ['hi', 'hello']:
+            send_message(business_phone_number_id, message, "Hello! Welcome to our WhatsApp bot. To stop the conversation, send 'stop'")
+            send_button_message(business_phone_number_id, message)
+        elif text == 'stop':
+            send_message(business_phone_number_id, message, "You have successfully stopped the conversation. Send 'hi' to start again.")
+        else:
+            send_message(business_phone_number_id, message, "I didn't understand that. Please try again or send 'stop' to end the conversation or Message 'Hi' to start again.")
 
-        send_message(business_phone_number_id, message)
-
+    elif message.get('type') == 'image':
+        send_message(business_phone_number_id, message, "I received your image. Let me process it.")
+    elif message.get('type') == 'document':
+        send_message(business_phone_number_id, message, "I received your document. Let me process it.")
+    elif 'interactive' in message:
+        payload = message['interactive']['button_reply']['id']
+        if payload == 'INVOICE':
+            send_message(business_phone_number_id, message, "Please upload your invoice.File should be in JPG, PNG, PDF.")
+        elif payload == 'RECEIPT':
+            send_message(business_phone_number_id, message, "Please upload your receipt.File should be in JPG, PNG, PDF.")    
     return {"status": "success"}
+
+def send_message(business_phone_number_id, message, text):
+    url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
+    headers = {"Authorization": f"Bearer {GRAPH_API_TOKEN}"}
+    data = {
+        "messaging_product": "whatsapp",
+        "to": message['from'],
+        "text": {"body": text}
+    }
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code != 200:
+        print(f"Error sending message: {response.content}")
+
+def send_button_message(business_phone_number_id, message):
+    url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
+    headers = {"Authorization": f"Bearer {GRAPH_API_TOKEN}"}
+    data = {
+        "messaging_product": "whatsapp",
+        "to": message['from'],
+        "type": "interactive",
+        "interactive": {
+            "type": "button",
+            "header": {
+                "type": "text",
+                "text": "Which documents you need to process?"
+            },
+            "body": {
+                "text": "Please select an option:"
+            },
+            "action": {
+                "buttons": [
+                    {
+                        "type": "reply",
+                        "reply": {
+                            "id": "INVOICE",
+                            "title": "Invoice"
+                        }
+                    },
+                    {
+                        "type": "reply",
+                        "reply": {
+                            "id": "RECEIPT",
+                            "title": "Receipt"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code != 200:
+        print(f"Error sending message buttons: {response.content}")
 
 @app.get("/webhook")
 async def verify_webhook(request: Request):
@@ -34,17 +102,17 @@ async def verify_webhook(request: Request):
 async def root():
     return {"message": "Nothing to see here. Checkout README.md to start."}
 
-def send_message(business_phone_number_id, message):
-    url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
-    headers = {"Authorization": f"Bearer {GRAPH_API_TOKEN}"}
-    data = {
-        "messaging_product": "whatsapp",
-        "to": message['from'],
-        "text": {"body": "Echo: " + message['text']['body']},
-        "context": {
-            "message_id": message['id'],
-        },
-    }
-    response = requests.post(url, headers=headers, json=data)
-    if response.status_code != 200:
-        print(f"Error sending message: {response.content}")
+# def send_message(business_phone_number_id, message):
+#     url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
+#     headers = {"Authorization": f"Bearer {GRAPH_API_TOKEN}"}
+#     data = {
+#         "messaging_product": "whatsapp",
+#         "to": message['from'],
+#         "text": {"body": "Echo: " + message['text']['body']},
+#         "context": {
+#             "message_id": message['id'],
+#         },
+#     }
+#     response = requests.post(url, headers=headers, json=data)
+#     if response.status_code != 200:
+#         print(f"Error sending message: {response.content}")
