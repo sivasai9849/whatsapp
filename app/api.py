@@ -16,10 +16,10 @@ async def webhook(request: Request):
     if message.get('type') == 'text':
         business_phone_number_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('metadata', {}).get('phone_number_id')
 
-        if message['text'].lower() in ['hi', 'hello']:
+        if message['text']['body'].lower() in ['hi', 'hello']:
             send_greeting_message(business_phone_number_id, message)
             send_button_message(business_phone_number_id, message)
-        elif message['text'].lower() == 'stop':
+        elif message['text']['body'].lower() == 'stop':
             # Handle stop command
             pass
         else:
