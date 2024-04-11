@@ -37,7 +37,9 @@ def send_greeting_message(business_phone_number_id, message):
     data = {
         "messaging_product": "whatsapp",
         "to": message['from'],
-        "text": "Hello! I'm here to help you. Send 'stop' to stop the conversation."
+        "message": {
+            "text": "Hello! I'm here to help you. Send 'stop' to stop the conversation."
+        }
     }
     response = requests.post(url, headers=headers, json=data)
     if response.status_code != 200:
