@@ -21,15 +21,17 @@ async def webhook(request: Request):
             send_button_message(business_phone_number_id, message)
         elif text == 'stop':
             send_message(business_phone_number_id, message, "You have successfully stopped the conversation. Send 'hi' to start again.")
-        elif text == 'invoice':
-            send_message(business_phone_number_id, message, "Please send the invoice image. Format: JPG, PNG, PDF")
         else:
             send_message(business_phone_number_id, message, "I didn't understand that. Please try again or send 'stop' to end the conversation or Message 'Hi' to start again.")
 
     elif message.get('type') == 'image':
         handle_image_message(business_phone_number_id, message)
-        
-
+    elif 'interactive' in message:
+        payload = message['interactive']['button_reply']['id']
+        if payload == 'INVOICE':
+            send_message(business_phone_number_id, message, "Please upload your invoice.File should be in JPG, PNG, PDF.")
+        elif payload == 'RECEIPT':
+            send_message(business_phone_number_id, message, "Please upload your receipt.File should be in JPG, PNG, PDF.")    
     return {"status": "success"}
 
 def has_greeted(message):
