@@ -22,11 +22,7 @@ async def webhook(request: Request):
         elif text == 'stop':
             send_message(business_phone_number_id, message, "You have successfully stopped the conversation. Send 'hi' to start again.")
         elif text == 'invoice':
-            if has_greeted(message):
-                send_message(business_phone_number_id, message, "Please send the invoice image. Format: PDF, PNG, JPEG")
-            else:
-                send_message(business_phone_number_id, message, "Please send 'hi' to start the conversation.")
-                send_button_message(business_phone_number_id, message)
+            send_message(business_phone_number_id, message, "Please send the invoice image. Format: JPG, PNG, PDF")
         else:
             send_message(business_phone_number_id, message, "I didn't understand that. Please try again or send 'stop' to end the conversation or Message 'Hi' to start again.")
 
