@@ -102,7 +102,7 @@ def send_button_message(business_phone_number_id, message):
     }
     response = requests.post(url, headers=headers, json=data)
     if response.status_code != 200:
-        print(f"Error sending message: {response.content}")
+        print(f"Error sending message buttons: {response.content}")
 
 @app.get("/webhook")
 async def verify_webhook(request: Request):
