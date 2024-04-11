@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from typing import List, Optional
 import json
 
-
 app = FastAPI()
 
 WEBHOOK_VERIFY_TOKEN = os.getenv("WEBHOOK_VERIFY_TOKEN")
@@ -22,71 +21,84 @@ class Message(BaseModel):
     type: Optional[str] = None
     text: Optional[str] = None
     buttons: Optional[List[Button]] = []
-    
+
 class InvoiceProcessingState:
     def __init__(self):
         self.state = "greeting"
         self.invoice_file = None
         self.phone_number = None
-        
+        self.waiting_for_response = False
+
     def reset(self):
         self.state = "greeting"
         self.invoice_file = None
         self.phone_number = None
-        
+        self.waiting_for_response = False
+
 state = InvoiceProcessingState()
 
 @app.post("/webhook")
 async def webhook(request: Request):
     data = await request.json()
-
-    # message = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0]
-
-    # if message.get('type') == 'text':
-    #     business_phone_number_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('metadata', {}).get('phone_number_id')
-
-    #     send_message(business_phone_number_id, message)
-    
     entry = data.get('entry', [])
     business_phone_number_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('metadata', {}).get('phone_number_id')
-    
+
     for event in entry:
         incoming_message = event["changes"][0]['value']['messages'][0]
         state.phone_number = incoming_message['from']
-        if state.state == "greeting":
-            user_message = incoming_message['text']['body'].lower()
-            if user_message == 'hi' or user_message == 'hello':
-                buttons = [
-                    Button(type="reply", title="process_invoice", reply="Process Invoice"),
-                    Button(type="reply", title="process_receipt", reply="Process Receipt"),
-                ]
-                response = Message(messaging_product="whatsapp", to=state.phone_number, text="Hello! What do you need to process?", buttons=buttons)
-                state.state = "process_selection"
-            else:
-                response = Message(messaging_product="whatsapp", to=state.phone_number, text="Hi! I am an invoice processing bot. Please type 'hi' or 'hello' to start.")
-        elif state.state == "process_selection":
-            user_message = incoming_message.get("button_reply", {}).get("title", "").lower()
-            if user_message == "process invoice":
-                response = Message(messaging_product="whatsapp", to=state.phone_number, text="Please upload the invoice in JPEG or PDF format.")
-                state.state = "invoice_upload"
-            elif user_message == "process receipt":
-                response = Message(messaging_product="whatsapp", to=state.phone_number, text="Receipt processing is not implemented yet.")
-            else:
-                response = Message(messaging_product="whatsapp", to=state.phone_number, text="Invalid option. Please select 'Process Invoice' or 'Process Receipt'.")
-        elif state.state == "invoice_upload":
-            if incoming_message.get("type") == "document":
-                state.invoice_file = incoming_message["document"]
-                response = Message(messaging_product="whatsapp", to=state.phone_number, text="Invoice processing started. You will receive the results soon.")
-                state.reset()
-            else:
-                response = Message(messaging_product="whatsapp", to=state.phone_number, text="No file was uploaded. Please try again.")
-        else:
-            response = Message(messaging_product="whatsapp", to=state.phone_number, text="Something went wrong. Please start over.")
-            state.reset()
 
-        await send_response(response, business_phone_number_id)
+        if state.waiting_for_response:
+            await handle_user_response(incoming_message, business_phone_number_id)
+        else:
+            await handle_new_message(incoming_message, business_phone_number_id)
 
     return {"message": "Webhook received"}
+
+async def handle_new_message(incoming_message, business_phone_number_id):
+    if state.state == "greeting":
+        user_message = incoming_message['text']['body'].lower()
+        if user_message == 'hi' or user_message == 'hello':
+            buttons = [
+                Button(type="reply", title="process_invoice", reply="Process Invoice"),
+                Button(type="reply", title="process_receipt", reply="Process Receipt"),
+            ]
+            response = Message(messaging_product="whatsapp", to=state.phone_number, text="Hello! What do you need to process?", buttons=buttons)
+            state.state = "process_selection"
+            state.waiting_for_response = True
+        else:
+            response = Message(messaging_product="whatsapp", to=state.phone_number, text="Hi! I am an invoice processing bot. Please type 'hi' or 'hello' to start.")
+    else:
+        response = Message(messaging_product="whatsapp", to=state.phone_number, text="Something went wrong. Please start over.")
+        state.reset()
+
+    await send_response(response, business_phone_number_id)
+
+async def handle_user_response(incoming_message, business_phone_number_id):
+    if state.state == "process_selection":
+        user_message = incoming_message.get("button_reply", {}).get("title", "").lower()
+        if user_message == "process invoice":
+            response = Message(messaging_product="whatsapp", to=state.phone_number, text="Please upload the invoice in JPEG or PDF format.")
+            state.state = "invoice_upload"
+            state.waiting_for_response = True
+        elif user_message == "process receipt":
+            response = Message(messaging_product="whatsapp", to=state.phone_number, text="Receipt processing is not implemented yet.")
+            state.reset()
+        else:
+            response = Message(messaging_product="whatsapp", to=state.phone_number, text="Invalid option. Please select 'Process Invoice' or 'Process Receipt'.")
+    elif state.state == "invoice_upload":
+        if incoming_message.get("type") == "document":
+            state.invoice_file = incoming_message["document"]
+            response = Message(messaging_product="whatsapp", to=state.phone_number, text="Invoice processing started. You will receive the results soon.")
+            state.reset()
+        else:
+            response = Message(messaging_product="whatsapp", to=state.phone_number, text="No file was uploaded. Please try again.")
+            state.waiting_for_response = True
+    else:
+        response = Message(messaging_product="whatsapp", to=state.phone_number, text="Something went wrong. Please start over.")
+        state.reset()
+
+    await send_response(response, business_phone_number_id)
+
 
 @app.get("/webhook")
 async def verify_webhook(request: Request):
