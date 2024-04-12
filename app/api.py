@@ -31,7 +31,7 @@ async def webhook(request: Request):
         response = requests.get('https://bd3d-2401-4900-4e1a-eb69-2187-3f39-d3a5-90c2.ngrok-free.app/1/invoices/list')
         if response.status_code == 200:
             invoices = response.json()
-            send_message(business_phone_number_id, message, f"Here are the invoices:")
+            send_message(business_phone_number_id, message, f"Here are the invoices: {invoices}")
         else:
             send_message(business_phone_number_id, message, "Error fetching invoices.")
             
