@@ -26,12 +26,18 @@ async def webhook(request: Request):
 
     elif message.get('type') == 'image':
         send_message(business_phone_number_id, message, "I received your image. Let me process it.")
+        response = requests.get('https://bd3d-2401-4900-4e1a-eb69-2187-3f39-d3a5-90c2.ngrok-free.app/1/invoices/list')
+        if response.status_code == 200:
+            invoices = response.json()
+            send_message(business_phone_number_id, message, f"Here are the invoices: {invoices['invoices'][0]}")
+        else:
+            send_message(business_phone_number_id, message, "Error fetching invoices.")
     elif message.get('type') == 'document':
         send_message(business_phone_number_id, message, "I received your document. Let me process it.")
         response = requests.get('https://bd3d-2401-4900-4e1a-eb69-2187-3f39-d3a5-90c2.ngrok-free.app/1/invoices/list')
         if response.status_code == 200:
             invoices = response.json()
-            send_message(business_phone_number_id, message, f"Here are the invoices: {invoices}")
+            send_message(business_phone_number_id, message, f"Here are the invoices: {invoices['invoices'][0]}")
         else:
             send_message(business_phone_number_id, message, "Error fetching invoices.")
             
