@@ -123,7 +123,7 @@ def upload_document(business_phone_number_id, message, document_type):
     else:
         return
 
-    url = f"https://0ce5-2401-4900-6572-21b8-a5f3-7e7d-e71f-ebc2.ngrok-free.app/1/uploads/upload"
+    url = f"https://111f-2401-4900-6572-21b8-a5f3-7e7d-e71f-ebc2.ngrok-free.app/1/uploads/upload"
     files = {
         'file_type': (None, file_type),
         'file': (f"{message['id']}.jpg", message['data'], 'image/jpeg'),
