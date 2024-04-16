@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Request, HTTPException, Response
+from fastapi import FastAPI, Request, HTTPException, Response, UploadFile, File, Form
 import os
 import requests
+
 
 app = FastAPI()
 
@@ -55,16 +56,26 @@ async def webhook(request: Request):
 
     elif message.get('type') == 'document':
         if current_step == 'invoice':
-           send_message(business_phone_number_id, message, f"{current_step} Thank you for uploading the invoice. Let me process it.")
-           # Process the invoice here
-           user_sessions[user_phone_number]['current_step'] = 'start'
+            response = await upload_file(
+                account_id="1",
+                file_type="invoice",
+                file=message['document'],
+                uuid="f81d4fae-7dec-11d0-a765-00a0c91e6b78"
+            )
+            send_message(business_phone_number_id, message, response["message"])
+            user_sessions[user_phone_number]['current_step'] = 'start'
         elif current_step == 'receipt':
-           send_message(business_phone_number_id, message, f"{current_step} Thank you for uploading the receipt. Let me process it.")
-           # Process the receipt here
-           user_sessions[user_phone_number]['current_step'] = 'start'
+            response = await upload_file(
+                account_id="1",
+                file_type="receipt",
+                file=message['document'],
+                uuid="f81d4fae-7dec-11d0-a765-00a0c91e6b78"
+            )
+            send_message(business_phone_number_id, message, response["message"])
+            user_sessions[user_phone_number]['current_step'] = 'start'
         else:
-           send_message(business_phone_number_id, message, "I received your document. Let me process it.")
-           # Process the document here
+            send_message(business_phone_number_id, message, "I received your document. Let me process it.")
+            # Process the document here
 
     elif 'interactive' in message:
         payload = message['interactive']['button_reply']['id']
@@ -76,6 +87,29 @@ async def webhook(request: Request):
             user_sessions[user_phone_number]['current_step'] = 'receipt'
 
     return {"status": "success"}
+
+@app.post("/{account_id}/uploads/upload")
+async def upload_file(
+    account_id: str,
+    file_type: str = Form(...),
+    file: UploadFile = File(...),
+    uuid: str = Form(...)
+):
+    try:
+        url = "https://8f2b-2401-4900-60fd-23e-29f5-3c4d-f04c-798c.ngrok-free.app/1/uploads/upload"
+        files = {
+            "file_type": file_type,
+            "file": file.file,
+            "uuid": uuid
+        }
+        response = requests.post(url, files=files)
+        
+        if response.status_code == 200:
+            return {"status": "success", "message": "File uploaded and processed successfully."}
+        else:
+            return {"status": "error", "message": "Error uploading file."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 def send_message(business_phone_number_id, message, text):
     url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
