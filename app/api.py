@@ -10,7 +10,6 @@ GRAPH_API_TOKEN = os.getenv("GRAPH_API_TOKEN")
 # Dictionary to store user sessions
 user_sessions = {}
 
-
 @app.post("/webhook")
 async def webhook(request: Request):
     data = await request.json()
@@ -41,28 +40,15 @@ async def webhook(request: Request):
         else:
             send_message(business_phone_number_id, message, "I didn't understand that. Please try again or send 'stop' to end the conversation or Message 'Hi' to start again.")
 
-    elif message.get('type') == 'image':
-        if current_step == 'invoice':
-            send_message(business_phone_number_id, message, "Thank you for uploading the invoice. Let me process it.")
-            # Process the invoice here
-            user_sessions[user_phone_number]['current_step'] = 'start'
-        elif current_step == 'receipt':
-            send_message(business_phone_number_id, message, "Thank you for uploading the receipt. Let me process it.")
-            # Process the receipt here
-            user_sessions[user_phone_number]['current_step'] = 'start'
-        else:
-            send_message(business_phone_number_id, message, "I received your image. Let me process it.")
-            # Process the image here
-
     elif message.get('type') == 'document':
         if current_step == 'invoice':
-           upload_id = await handle_file_upload(message, 'invoice')
-           send_message(business_phone_number_id, message, f"{current_step} is the file uplaoded. Thank you for uploading . Let me process it {upload_id}.")
+           upload_id = await upload_to_tally(message, 'invoice')
+           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {upload_id}.")
            # Process the invoice here
            user_sessions[user_phone_number]['current_step'] = 'start'
         elif current_step == 'receipt':
-           upload_id = await handle_file_upload(message, 'invoice')
-           send_message(business_phone_number_id, message, f"{current_step} is the file uplaoded. Thank you for uploading . Let me process it {upload_id}.")
+           upload_id = await upload_to_tally(message, 'receipt')
+           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {upload_id}.")
            # Process the receipt here
            user_sessions[user_phone_number]['current_step'] = 'start'
         else:
@@ -80,18 +66,21 @@ async def webhook(request: Request):
 
     return {"status": "success"}
 
-async def handle_file_upload(message, current_step):
-    url = f"https://2f86-175-101-104-21.ngrok-free.app/1/uploads/upload"
-    files = {
-        "file_type": current_step,
-        "file": await message.get('document', {}).get('file'),
-        "uuid": "f81d4fae-7dec-11d0-a765-00a0c91e6b78",
-        "fy": ""
+async def upload_to_tally(message, file_type):
+    url = "https://f8fd-175-101-104-21.ngrok-free.app/1/uploads/upload"
+    file_data = await message.get('document', {}).get('file')
+    file_name = message.get('document', {}).get('file_name', 'document.pdf')  # Use the file name if available, otherwise use a default name
+    files = {"file": (file_name, file_data, "application/pdf")}
+    data = {
+        "file_type": file_type,
+        "uuid": "f81d4fae-7dec-11d0-a765-00a0c91e6b78"
     }
 
-    response = await requests.post(url, files=files)
+    response = await requests.post(url, files=files, data=data)
     response.raise_for_status()
     return response.json()["id"]
+
+
 
 def send_message(business_phone_number_id, message, text):
     url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
@@ -104,6 +93,7 @@ def send_message(business_phone_number_id, message, text):
     response = requests.post(url, headers=headers, json=data)
     if response.status_code != 200:
         print(f"Error sending message: {response.content}")
+
 
 def send_button_message(business_phone_number_id, message):
     url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
@@ -145,6 +135,7 @@ def send_button_message(business_phone_number_id, message):
     if response.status_code != 200:
         print(f"Error sending message buttons: {response.content}")
 
+
 @app.get("/webhook")
 async def verify_webhook(request: Request):
     mode = request.query_params.get('hub.mode')
@@ -154,6 +145,7 @@ async def verify_webhook(request: Request):
         return Response(content=challenge)
     else:
         raise HTTPException(status_code=403, detail="Forbidden")
+
 
 @app.get("/")
 async def root():
