@@ -10,6 +10,7 @@ GRAPH_API_TOKEN = os.getenv("GRAPH_API_TOKEN")
 # Dictionary to store user sessions
 user_sessions = {}
 
+
 @app.post("/webhook")
 async def webhook(request: Request):
     data = await request.json()
@@ -55,11 +56,13 @@ async def webhook(request: Request):
 
     elif message.get('type') == 'document':
         if current_step == 'invoice':
-           send_message(business_phone_number_id, message, f"{current_step} Thank you for uploading the invoice. Let me process it.")
+           upload_id = await handle_file_upload(message, 'invoice')
+           send_message(business_phone_number_id, message, f"{current_step} is the file uplaoded. Thank you for uploading . Let me process it {upload_id}.")
            # Process the invoice here
            user_sessions[user_phone_number]['current_step'] = 'start'
         elif current_step == 'receipt':
-           send_message(business_phone_number_id, message, f"{current_step} Thank you for uploading the receipt. Let me process it.")
+           upload_id = await handle_file_upload(message, 'invoice')
+           send_message(business_phone_number_id, message, f"{current_step} is the file uplaoded. Thank you for uploading . Let me process it {upload_id}.")
            # Process the receipt here
            user_sessions[user_phone_number]['current_step'] = 'start'
         else:
@@ -76,6 +79,19 @@ async def webhook(request: Request):
             user_sessions[user_phone_number]['current_step'] = 'receipt'
 
     return {"status": "success"}
+
+async def handle_file_upload(message, current_step):
+    url = f"https://2f86-175-101-104-21.ngrok-free.app/1/uploads/upload"
+    files = {
+        "file_type": current_step,
+        "file": await message.get('document', {}).get('file'),
+        "uuid": "f81d4fae-7dec-11d0-a765-00a0c91e6b78",
+        "fy": ""
+    }
+
+    response = await requests.post(url, files=files)
+    response.raise_for_status()
+    return response.json()["id"]
 
 def send_message(business_phone_number_id, message, text):
     url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
