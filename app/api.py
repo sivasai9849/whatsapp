@@ -42,13 +42,13 @@ async def webhook(request: Request):
 
     elif message.get('type') == 'document':
         if current_step == 'invoice':
-           upload_id = await upload_to_tally(message, 'invoice')
-           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {upload_id}.")
+           response = await upload_to_tally(message, 'invoice')
+           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {response}.")
            # Process the invoice here
            user_sessions[user_phone_number]['current_step'] = 'start'
         elif current_step == 'receipt':
-           upload_id = await upload_to_tally(message, 'receipt')
-           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {upload_id}.")
+           response = await upload_to_tally(message, 'receipt')
+           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {response}.")
            # Process the receipt here
            user_sessions[user_phone_number]['current_step'] = 'start'
         else:
@@ -67,18 +67,18 @@ async def webhook(request: Request):
     return {"status": "success"}
 
 async def upload_to_tally(message, file_type):
-    url = "https://f8fd-175-101-104-21.ngrok-free.app/1/uploads/upload"
-    file_data = await message.get('document', {}).get('file')
-    file_name = message.get('document', {}).get('file_name', 'document.pdf')  # Use the file name if available, otherwise use a default name
-    files = {"file": (file_name, file_data, "application/pdf")}
-    data = {
-        "file_type": file_type,
-        "uuid": "f81d4fae-7dec-11d0-a765-00a0c91e6b78"
-    }
+    # url = "https://f8fd-175-101-104-21.ngrok-free.app/1/uploads/upload"
+    # file_data = await message.get('document', {}).get('file')
+    # file_name = message.get('document', {}).get('file_name', 'document.pdf')  # Use the file name if available, otherwise use a default name
+    # files = {"file": (file_name, file_data, "application/pdf")}
+    # data = {
+    #     "file_type": file_type,
+    #     "uuid": "f81d4fae-7dec-11d0-a765-00a0c91e6b78"
+    # }
 
-    response = await requests.post(url, files=files, data=data)
+    response = await requests.get("https://f8fd-175-101-104-21.ngrok-free.app/1/invoices/list")
     response.raise_for_status()
-    return response.json()["id"]
+    return response
 
 
 
