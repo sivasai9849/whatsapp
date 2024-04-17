@@ -50,12 +50,14 @@ async def webhook(request: Request):
 
     elif message.get('type') == 'document':
         if current_step == 'invoice':
-           upload_id = await upload_to_tally(message, 'invoice')
+           document_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0].get('document', {}).get('id')
+           media_url= get_media_url(document_id)
+           pdf_content = download_media(media_url)
+           upload_id = upload_to_tally(pdf_content,current_step)
            send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {upload_id}.")
            # Process the invoice here
            user_sessions[user_phone_number]['current_step'] = 'start'
         elif current_step == 'receipt':
-           upload_id = await upload_to_tally(message, 'invoice')
            send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {upload_id}.")
            # Process the receipt here
            user_sessions[user_phone_number]['current_step'] = 'start'
@@ -75,64 +77,37 @@ async def webhook(request: Request):
     return {"status": "success"}
 
 
-
-def upload_to_tally(message, file_type):
-    url = "https://040e-175-101-104-21.ngrok-free.app/1/uploads/upload"
-    media_id = message.get('document', {}).get('id')
-    if not media_id:
-        print("Error: 'media_id' is missing from the message dictionary.")
-        return None
-
-    try:
-        media_url = get_media_url(media_id)
-        if not media_url:
-            print("Error: Could not retrieve media URL.")
-            return None
-
-        file_data = download_media(media_url)
-        if not file_data:
-            print("Error: Could not download the media file.")
-            return None
-
-        file_name = f"{media_id}.pdf"
-
-        files = {"file": (file_name, file_data, "application/pdf")}
-        data = {
-            "file_type": file_type,
-            "uuid": "f81d4fae-7dec-11d0-a765-00a0c91e6b78"
-        }
-
-        print("Files:", files)
-        print("Data:", data)
-
-        response = requests.post(url, files=files, data=data, headers={
-            "Authorization": f"Bearer {GRAPH_API_TOKEN}"
-        })
-        response.raise_for_status()
-        return response.json()["id"]
-    except requests.exceptions.RequestException as e:
-        print(f"Error uploading file: {e}")
-        return None
-
-def get_media_url(media_id):
-    url = f"https://graph.facebook.com/v18.0/{media_id}"
+def get_media_url(document_id):
+    url = f"https://graph.facebook.com/v18.0/{document_id}"
     headers = {"Authorization": f"Bearer {GRAPH_API_TOKEN}"}
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
-        return response.json()["url"]
+        return response.json().get('url')
     else:
-        print(f"Error fetching media URL: {response.status_code} - {response.text}")
+        print(f"Error getting media URL: {response.content}")
         return None
-
+ 
 def download_media(media_url):
-    try:
-        response = requests.get(media_url)
-        response.raise_for_status()
+    url = media_url
+    headers = {"Authorization": f"Bearer {GRAPH_API_TOKEN}"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
         return response.content
-    except requests.exceptions.RequestException as e:
-        print(f"Error downloading media: {e}")
+    else:
+        print(f"Error getting media: {response.status_code} - {response.text}")
         return None
-
+    
+def upload_to_tally(pdf_content,current_step):
+    type= current_step
+    url = "https://e9c4-175-101-104-21.ngrok-free.app/1/upload/upload"
+    data = {
+        "file": pdf_content,
+        "file_type": type,
+        "uuid":"f81d4fae-7dec-11d0-a765-00a0c91e6b78"
+    }
+    responce=requests.post(url, data=data)
+    return responce.json().get('id')
+        
 def send_message(business_phone_number_id, message, text):
     url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
     headers = {"Authorization": f"Bearer {GRAPH_API_TOKEN}"}
