@@ -99,7 +99,7 @@ def download_media(media_url):
     
 def upload_to_tally(pdf_content,current_step):
     type= current_step
-    url = "https://e9c4-175-101-104-21.ngrok-free.app/1/upload/upload"
+    url = "https://e9c4-175-101-104-21.ngrok-free.app/1/uploads/upload"
     data = {
         "file": pdf_content,
         "file_type": type,
