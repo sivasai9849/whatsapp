@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException, Response
 import os
 import requests
-import httpx
 app = FastAPI()
 
 WEBHOOK_VERIFY_TOKEN = os.getenv("WEBHOOK_VERIFY_TOKEN")
@@ -79,10 +78,10 @@ async def webhook(request: Request):
 
 def upload_to_tally(message, file_type):
     url = "https://040e-175-101-104-21.ngrok-free.app/1/uploads/upload"
-    file_data = message.get('document', {}).get('file')
-    file_name = message.get('document', {}).get('file_name', 'document.pdf')
-
-    files = {"file": (file_name, file_data, "application/pdf")}
+    download_media(message['media_id'])
+    files = {
+        "file": open(f"{message['media_id']}.pdf", "rb")
+    }
     data = {
         "file_type": file_type,
         "uuid": "f81d4fae-7dec-11d0-a765-00a0c91e6b78"
@@ -93,6 +92,19 @@ def upload_to_tally(message, file_type):
     print(response.text)
     response.raise_for_status()
     return response.json()["id"]
+
+def get_media_url(media_id):
+    url = f"https://graph.facebook.com/v18.0/{media_id}"
+    headers = {"Authorization": f"Bearer {GRAPH_API_TOKEN}"}
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.json()["url"]
+
+def download_media(media_id):
+    media_url = get_media_url(media_id)
+    response = requests.get(media_url)
+    response.raise_for_status()
+    return response.content
 
 def send_message(business_phone_number_id, message, text):
     url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
