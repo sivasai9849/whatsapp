@@ -78,20 +78,33 @@ async def webhook(request: Request):
 
 def upload_to_tally(message, file_type):
     url = "https://040e-175-101-104-21.ngrok-free.app/1/uploads/upload"
-    download_media(message['media_id'])
-    files = {
-        "file": open(f"{message['media_id']}.pdf", "rb")
-    }
-    data = {
-        "file_type": file_type,
-        "uuid": "f81d4fae-7dec-11d0-a765-00a0c91e6b78"
-    }
+    media_id = message.get('document', {}).get('id')
+    if not media_id:
+        print("Error: 'media_id' is missing from the message dictionary.")
+        return None
 
-    response = requests.post(url, files=files, data=data)
-    print(response.status_code)
-    print(response.text)
-    response.raise_for_status()
-    return response.json()["id"]
+    try:
+        media_url = get_media_url(media_id)
+        file_data = download_media(media_url)
+        file_name = f"{media_id}.pdf"
+
+        files = {"file": (file_name, file_data, "application/pdf")}
+        data = {
+            "file_type": file_type,
+            "uuid": "f81d4fae-7dec-11d0-a765-00a0c91e6b78"
+        }
+
+        print("Files:", files)
+        print("Data:", data)
+
+        response = requests.post(url, files=files, data=data, headers={
+            "Authorization": f"Bearer {GRAPH_API_TOKEN}"
+        })
+        response.raise_for_status()
+        return response.json()["id"]
+    except requests.exceptions.RequestException as e:
+        print(f"Error uploading file: {e}")
+        return None
 
 def get_media_url(media_id):
     url = f"https://graph.facebook.com/v18.0/{media_id}"
@@ -100,8 +113,7 @@ def get_media_url(media_id):
     response.raise_for_status()
     return response.json()["url"]
 
-def download_media(media_id):
-    media_url = get_media_url(media_id)
+def download_media(media_url):
     response = requests.get(media_url)
     response.raise_for_status()
     return response.content
