@@ -15,16 +15,25 @@ async def webhook(request: Request):
     data = await request.json()
 
     business_phone_number_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('metadata', {}).get('phone_number_id')
-    user_phone_number = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0]['from']
+    user_phone_number = None  # Initialize user_phone_number
+    entries = data.get('entry', [])
+    if entries:
+        changes = entries[0].get('changes', [])
+        if changes:
+            value = changes[0].get('value', {})
+            messages = value.get('messages', [])
+            if messages:
+                user_phone_number = messages[0].get('from')   
 
     # Check if the user has an existing session
-    if user_phone_number not in user_sessions:
+    if user_phone_number and user_phone_number not in user_sessions:
         user_sessions[user_phone_number] = {
             'current_step': 'start'
         }
 
-    user_info = user_sessions[user_phone_number]
-    current_step = user_info['current_step']
+    if user_phone_number:
+        user_info = user_sessions[user_phone_number]
+        current_step = user_info['current_step']
 
     message = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0]
 
@@ -76,8 +85,7 @@ async def upload_to_tally(message, file_type):
     #     "uuid": "f81d4fae-7dec-11d0-a765-00a0c91e6b78"
     # }
 
-    response = await requests.get("https://f8fd-175-101-104-21.ngrok-free.app/1/invoices/list")
-    response.raise_for_status()
+    response = await requests.get("https://43b4-175-101-104-21.ngrok-free.app/1/invoices/list")
     return response
 
 
