@@ -80,9 +80,8 @@ async def webhook(request: Request):
 async def upload_to_tally(message, file_type):
     async with httpx.AsyncClient() as client:
         response = await client.get("https://43b4-175-101-104-21.ngrok-free.app/1/invoices/list")
-    return response.json()  # or just `response` if you need the full response object
-
-
+    data = response.json()
+    return data["total"]
 
 def send_message(business_phone_number_id, message, text):
     url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
