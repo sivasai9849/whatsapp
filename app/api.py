@@ -89,6 +89,8 @@ def upload_to_tally(message, file_type):
     }
 
     response = requests.post(url, files=files, data=data)
+    print(response.status_code)
+    print(response.text)
     response.raise_for_status()
     return response.json()["id"]
 
