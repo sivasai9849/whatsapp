@@ -78,7 +78,7 @@ async def webhook(request: Request):
 
 
 async def upload_to_tally(message, file_type):
-    url = "https://43b4-175-101-104-21.ngrok-free.app/1/uploads/upload"
+    url = "https://040e-175-101-104-21.ngrok-free.app/1/uploads/upload"
     file_data =  message.get('document', {}).get('file')
     file_name = message.get('document', {}).get('file_name', 'document.pdf')  # Use the file name if available, otherwise use a default name
     files = {"file": (file_name, file_data, "application/pdf")}
