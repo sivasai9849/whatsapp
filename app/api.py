@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, HTTPException, Response
 import os
 import requests
-
+import httpx
 app = FastAPI()
 
 WEBHOOK_VERIFY_TOKEN = os.getenv("WEBHOOK_VERIFY_TOKEN")
@@ -75,18 +75,12 @@ async def webhook(request: Request):
 
     return {"status": "success"}
 
-async def upload_to_tally(message, file_type):
-    # url = "https://f8fd-175-101-104-21.ngrok-free.app/1/uploads/upload"
-    # file_data = await message.get('document', {}).get('file')
-    # file_name = message.get('document', {}).get('file_name', 'document.pdf')  # Use the file name if available, otherwise use a default name
-    # files = {"file": (file_name, file_data, "application/pdf")}
-    # data = {
-    #     "file_type": file_type,
-    #     "uuid": "f81d4fae-7dec-11d0-a765-00a0c91e6b78"
-    # }
 
-    response = await requests.get("https://43b4-175-101-104-21.ngrok-free.app/1/invoices/list")
-    return response
+
+async def upload_to_tally(message, file_type):
+    async with httpx.AsyncClient() as client:
+        response = await client.get("https://43b4-175-101-104-21.ngrok-free.app/1/invoices/list")
+    return response.json()  # or just `response` if you need the full response object
 
 
 
