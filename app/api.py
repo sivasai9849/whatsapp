@@ -51,13 +51,13 @@ async def webhook(request: Request):
 
     elif message.get('type') == 'document':
         if current_step == 'invoice':
-           response = await upload_to_tally(message, 'invoice')
-           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {response}.")
+           upload_id = await upload_to_tally(message, 'invoice')
+           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {upload_id}.")
            # Process the invoice here
            user_sessions[user_phone_number]['current_step'] = 'start'
         elif current_step == 'receipt':
-           response = await upload_to_tally(message, 'receipt')
-           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {response}.")
+           upload_id = await upload_to_tally(message, 'invoice')
+           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {upload_id}.")
            # Process the receipt here
            user_sessions[user_phone_number]['current_step'] = 'start'
         else:
@@ -78,10 +78,19 @@ async def webhook(request: Request):
 
 
 async def upload_to_tally(message, file_type):
+    url = " https://43b4-175-101-104-21.ngrok-free.app/1/uploads/upload"
+    file_data = await message.get('document', {}).get('file')
+    file_name = message.get('document', {}).get('file_name', 'document.pdf')  # Use the file name if available, otherwise use a default name
+    files = {"file": (file_name, file_data, "application/pdf")}
+    data = {
+        "file_type": file_type,
+        "uuid": "f81d4fae-7dec-11d0-a765-00a0c91e6b78"
+    }
+
     async with httpx.AsyncClient() as client:
-        response = await client.get("https://43b4-175-101-104-21.ngrok-free.app/1/invoices/list")
-    data = response.json()
-    return data["total"]
+        response = await client.post(url, files=files, data=data)
+        response.raise_for_status()
+        return response.json()["id"]
 
 def send_message(business_phone_number_id, message, text):
     url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
