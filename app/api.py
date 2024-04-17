@@ -85,7 +85,15 @@ def upload_to_tally(message, file_type):
 
     try:
         media_url = get_media_url(media_id)
+        if not media_url:
+            print("Error: Could not retrieve media URL.")
+            return None
+
         file_data = download_media(media_url)
+        if not file_data:
+            print("Error: Could not download the media file.")
+            return None
+
         file_name = f"{media_id}.pdf"
 
         files = {"file": (file_name, file_data, "application/pdf")}
@@ -110,13 +118,20 @@ def get_media_url(media_id):
     url = f"https://graph.facebook.com/v18.0/{media_id}"
     headers = {"Authorization": f"Bearer {GRAPH_API_TOKEN}"}
     response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    return response.json()["url"]
+    if response.status_code == 200:
+        return response.json()["url"]
+    else:
+        print(f"Error fetching media URL: {response.status_code} - {response.text}")
+        return None
 
 def download_media(media_url):
-    response = requests.get(media_url)
-    response.raise_for_status()
-    return response.content
+    try:
+        response = requests.get(media_url)
+        response.raise_for_status()
+        return response.content
+    except requests.exceptions.RequestException as e:
+        print(f"Error downloading media: {e}")
+        return None
 
 def send_message(business_phone_number_id, message, text):
     url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
