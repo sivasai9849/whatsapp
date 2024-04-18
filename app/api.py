@@ -54,16 +54,37 @@ async def webhook(request: Request):
            media_url= get_media_url(document_id)
            pdf_content = download_media(media_url)
            upload_id = upload_to_tally(pdf_content,current_step)
-           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {upload_id}.")
+           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it upload_id: {upload_id}.")
            # Process the invoice here
            user_sessions[user_phone_number]['current_step'] = 'start'
         elif current_step == 'receipt':
-           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it {upload_id}.")
+           document_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0].get('document', {}).get('id')
+           media_url= get_media_url(document_id)
+           pdf_content = download_media(media_url) 
+           upload_id = upload_to_tally(pdf_content,current_step)
+           send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it upload_id: {upload_id}.")
            # Process the receipt here
            user_sessions[user_phone_number]['current_step'] = 'start'
-        else:
-           send_message(business_phone_number_id, message, "I received your document. Let me process it.")
-           # Process the document here
+        
+    
+    elif message.get('type') == 'image':
+        if current_step == 'invoice':
+              document_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0].get('image', {}).get('id')
+              media_url= get_media_url(document_id)
+              pdf_content = download_media(media_url)
+              upload_id = upload_to_tally(pdf_content,current_step)
+              send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it upload_id: {upload_id}.")
+              # Process the invoice here
+              user_sessions[user_phone_number]['current_step'] = 'start'
+        
+        elif current_step == 'receipt':
+                document_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0].get('image', {}).get('id')
+                media_url= get_media_url(document_id)
+                pdf_content = download_media(media_url)
+                upload_id = upload_to_tally(pdf_content,current_step)
+                send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it upload_id: {upload_id}.")
+                # Process the receipt here
+                user_sessions[user_phone_number]['current_step'] = 'start'             
 
     elif 'interactive' in message:
         payload = message['interactive']['button_reply']['id']
