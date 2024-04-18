@@ -53,7 +53,7 @@ async def webhook(request: Request):
            document_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0].get('document', {}).get('id')
            media_url= get_media_url(document_id)
            pdf_content = download_media(media_url)
-           upload_id = upload_to_tally(pdf_content,current_step)
+           upload_id = upload_to_tally_integration(pdf_content,current_step)
            send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it upload_id: {upload_id}.")
            # Process the invoice here
            user_sessions[user_phone_number]['current_step'] = 'start'
@@ -61,7 +61,7 @@ async def webhook(request: Request):
            document_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0].get('document', {}).get('id')
            media_url= get_media_url(document_id)
            pdf_content = download_media(media_url) 
-           upload_id = upload_to_tally(pdf_content,current_step)
+           upload_id = upload_to_tally_integration(pdf_content,current_step)
            send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it upload_id: {upload_id}.")
            # Process the receipt here
            user_sessions[user_phone_number]['current_step'] = 'start'
@@ -72,7 +72,7 @@ async def webhook(request: Request):
               document_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0].get('image', {}).get('id')
               media_url= get_media_url(document_id)
               pdf_content = download_media(media_url)
-              upload_id = upload_to_tally(pdf_content,current_step)
+              upload_id = upload_to_tally_integration(pdf_content,current_step)
               send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it upload_id: {upload_id}.")
               # Process the invoice here
               user_sessions[user_phone_number]['current_step'] = 'start'
@@ -81,7 +81,7 @@ async def webhook(request: Request):
                 document_id = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0].get('image', {}).get('id')
                 media_url= get_media_url(document_id)
                 pdf_content = download_media(media_url)
-                upload_id = upload_to_tally(pdf_content,current_step)
+                upload_id = upload_to_tally_integration(pdf_content,current_step)
                 send_message(business_phone_number_id, message, f"{current_step} is the file uploaded. Thank you for uploading. Let me process it upload_id: {upload_id}.")
                 # Process the receipt here
                 user_sessions[user_phone_number]['current_step'] = 'start'             
@@ -118,9 +118,9 @@ def download_media(media_url):
         print(f"Error getting media: {response.status_code} - {response.text}")
         return None
     
-def upload_to_tally(pdf_content, current_step):
+def upload_to_tally_integration(pdf_content, current_step):
     type = current_step
-    url = "https://10ea-2401-4900-4e01-7af4-4550-2182-68b8-45e6.ngrok-free.app/1/uploads/upload"
+    url = "https://6b16-175-101-104-21.ngrok-free.app/1/uploads/upload"
     files = {
         "file": ("file.pdf", pdf_content, "application/pdf"),
         "file_type": (None, type),
