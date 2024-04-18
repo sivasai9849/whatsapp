@@ -97,16 +97,16 @@ def download_media(media_url):
         print(f"Error getting media: {response.status_code} - {response.text}")
         return None
     
-def upload_to_tally(pdf_content,current_step):
-    type= current_step
-    url = "https://3ad3-175-101-104-21.ngrok-free.app/1/uploads/upload"
-    data = {
-        "file": pdf_content,
-        "file_type": type,
-        "uuid":"f81d4fae-7dec-11d0-a765-00a0c91e6b78"
+def upload_to_tally(pdf_content, current_step):
+    type = current_step
+    url = "https://10ea-2401-4900-4e01-7af4-4550-2182-68b8-45e6.ngrok-free.app/1/uploads/upload"
+    files = {
+        "file": ("file.pdf", pdf_content, "application/pdf"),
+        "file_type": (None, type),
+        "uuid": (None, "f81d4fae-7dec-11d0-a765-00a0c91e6b78")
     }
-    responce=requests.post(url, data=data)
-    return responce.json().get('id')
+    response = requests.post(url, files=files)
+    return response.json().get('id')
         
 def send_message(business_phone_number_id, message, text):
     url = f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages"
